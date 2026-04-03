@@ -29,7 +29,7 @@ impl GoCliArgs {
     ///
     /// Соединяет переданное имя файла из командной строки с `current_dir`.
     pub(crate) fn path_to_log_file(&self) -> AnyhowResult<PathBuf> {
-        Ok(Self::get_current_dir()?.join(&self.log_filename))
+        Ok(Self::get_current_dir()?.join(self.filename()))
     }
 
     /// Предоставить текущую директорию.

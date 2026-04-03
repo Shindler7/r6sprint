@@ -1,9 +1,14 @@
 pub mod parse;
 use parse::*;
 
-/// Режим чтения из лог-файлов данных.
+use std::{
+    fmt::Debug,
+    io::{BufRead, BufReader, Read},
+};
+
+/// Режим чтения данных из лог-файлов.
 pub enum ReadModeLog {
-    /// Читать все данные.
+    /// Читать всё.
     All,
     /// Считывать только ошибки.
     Errors,
@@ -26,21 +31,20 @@ where
 /// Для `Box<dyn много трейтов, помимо auto-трейтов>`, (`rustc E0225`)
 /// `only auto traits can be used as additional traits in a trait object`
 /// `consider creating a new trait with all of these as supertraits and using that trait here instead`
-pub trait MyReader: std::io::Read + std::fmt::Debug + 'static {}
-impl<T: std::io::Read + std::fmt::Debug + 'static> MyReader for T {}
+pub trait MyReader: Read + Debug + 'static {}
+impl<T: Read + Debug + 'static> MyReader for T {}
 // подсказка: вместо trait-объекта можно дженерик
 /// Итератор, на выходе которого - строки распарсенной структуры данных
 #[derive(Debug)]
 struct LogIterator {
     lines: std::iter::Filter<
-        std::io::Lines<std::io::BufReader<RefMutWrapper<'static, Box<dyn MyReader>>>>,
+        std::io::Lines<BufReader<RefMutWrapper<'static, Box<dyn MyReader>>>>,
         fn(&Result<String, std::io::Error>) -> bool,
     >,
     reader_rc: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>,
 }
 impl LogIterator {
     fn new(r: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>) -> Self {
-        use std::io::BufRead;
         // подсказка: unsafe избыточен, да и весь rc - тоже
         // примечание автора прототипа:
         // > Мотивация: хочу позаимствовать RefCell,
@@ -51,7 +55,7 @@ impl LogIterator {
         let the_borrow = r.borrow_mut();
         let the_borrow = unsafe { std::mem::transmute::<_, _>(the_borrow) };
         Self {
-            lines: std::io::BufReader::with_capacity(4096, RefMutWrapper(the_borrow))
+            lines: BufReader::with_capacity(4096, RefMutWrapper(the_borrow))
                 .lines()
                 .filter(|line_res| {
                     !line_res
@@ -65,7 +69,7 @@ impl LogIterator {
     }
 }
 impl Iterator for LogIterator {
-    type Item = parse::LogLine;
+    type Item = LogLine;
     fn next(&mut self) -> Option<Self::Item> {
         let line = self.lines.next()?.ok()?;
         let (remaining, result) = LOG_LINE_PARSER.parse(line.trim().to_string()).ok()?;
@@ -74,7 +78,13 @@ impl Iterator for LogIterator {
 }
 
 // подсказка: RefCell вообще не нужен
-/// Принимает поток байт, отдаёт отфильтрованные и распарсенные логи
+/// Принимает поток байт, отдаёт отфильтрованные и распарсенные логи.
+///
+/// ## Аргументы
+///
+/// - `input` —
+/// - `mode` — режим парсинга логов [`ReadModeLog`].
+/// - `request_ids` —
 pub fn read_log(
     input: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>,
     mode: ReadModeLog,
