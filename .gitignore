@@ -1,4 +1,8 @@
+# Rust
 /target
 
 # IDE
 /.idea
+
+# App Temp
+example.log
