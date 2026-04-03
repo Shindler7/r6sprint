@@ -13,3 +13,5 @@ name = "cli"
 path = "src/main.rs"
 
 [dependencies]
+anyhow = "1"
+argh = "0.1"
