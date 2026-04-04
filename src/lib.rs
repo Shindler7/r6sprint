@@ -3,7 +3,8 @@ use parse::*;
 
 use std::{
     fmt::Debug,
-    io::{BufRead, BufReader, Read},
+    io::{BufRead, BufReader, Error as IoError, Lines, Read, Result as IoResult},
+    iter::Filter,
 };
 
 /// Режим чтения данных из лог-файлов.
@@ -16,60 +17,32 @@ pub enum ReadModeLog {
     Exchanges,
 }
 
-/// Обёртка, без которой не выполнено требование `std::io::BufReader<T: std::io::Read>`
+/// Итератор, на выходе которого - строки распарсенной структуры данных.
 #[derive(Debug)]
-struct RefMutWrapper<'a, T>(std::cell::RefMut<'a, T>);
-impl<'a, T> std::io::Read for RefMutWrapper<'a, T>
-where
-    T: std::io::Read,
-{
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        self.0.read(buf)
+struct LogIterator<R: Read> {
+    lines: Filter<Lines<BufReader<R>>, fn(&Result<String, IoError>) -> bool>,
+}
+
+impl<R: Read> LogIterator<R> {
+    fn new(r: R) -> Self {
+        Self {
+            lines: BufReader::new(r).lines().filter(Self::non_empty_lines),
+        }
+    }
+
+    /// Вспомогательный метод фильтрующий пустые строки.
+    fn non_empty_lines(line: &IoResult<String>) -> bool {
+        !line
+            .as_ref()
+            .ok()
+            .map(|line| line.trim().is_empty())
+            .unwrap_or(false)
     }
 }
 
-/// Для `Box<dyn много трейтов, помимо auto-трейтов>`, (`rustc E0225`)
-/// `only auto traits can be used as additional traits in a trait object`
-/// `consider creating a new trait with all of these as supertraits and using that trait here instead`
-pub trait MyReader: Read + Debug + 'static {}
-impl<T: Read + Debug + 'static> MyReader for T {}
-// подсказка: вместо trait-объекта можно дженерик
-/// Итератор, на выходе которого - строки распарсенной структуры данных
-#[derive(Debug)]
-struct LogIterator {
-    lines: std::iter::Filter<
-        std::io::Lines<BufReader<RefMutWrapper<'static, Box<dyn MyReader>>>>,
-        fn(&Result<String, std::io::Error>) -> bool,
-    >,
-    reader_rc: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>,
-}
-impl LogIterator {
-    fn new(r: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>) -> Self {
-        // подсказка: unsafe избыточен, да и весь rc - тоже
-        // примечание автора прототипа:
-        // > Мотивация: хочу позаимствовать RefCell,
-        // > но боюсь, что Rc протухнет - поэтому буду хранить и Rc и RefMut.
-        // > Я знаю, что деструкторы полей структуры вызываются в
-        // > порядке объявления в структуре - то есть сначала будет удалён
-        // > мой RefMutWrapper, а уже потом и весь исходный reader_rc
-        let the_borrow = r.borrow_mut();
-        let the_borrow = unsafe { std::mem::transmute::<_, _>(the_borrow) };
-        Self {
-            lines: BufReader::with_capacity(4096, RefMutWrapper(the_borrow))
-                .lines()
-                .filter(|line_res| {
-                    !line_res
-                        .as_ref()
-                        .ok()
-                        .map(|line| line.trim().is_empty())
-                        .unwrap_or(false)
-                }),
-            reader_rc: r,
-        }
-    }
-}
-impl Iterator for LogIterator {
+impl<R: Read> Iterator for LogIterator<R> {
     type Item = LogLine;
+
     fn next(&mut self) -> Option<Self::Item> {
         let line = self.lines.next()?.ok()?;
         let (remaining, result) = LOG_LINE_PARSER.parse(line.trim().to_string()).ok()?;
@@ -77,58 +50,44 @@ impl Iterator for LogIterator {
     }
 }
 
-// подсказка: RefCell вообще не нужен
-/// Принимает поток байт, отдаёт отфильтрованные и распарсенные логи.
+/// Принимает поток данных из файла, отдаёт обработанные логи.
 ///
 /// ## Аргументы
 ///
-/// - `input` —
-/// - `mode` — режим парсинга логов [`ReadModeLog`].
-/// - `request_ids` —
-pub fn read_log(
-    input: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>>,
-    mode: ReadModeLog,
-    request_ids: Vec<u32>,
-) -> Vec<LogLine> {
-    let logs = LogIterator::new(input);
-    let mut collected = Vec::new();
-    // подсказка: можно обойтись итераторами
-    for log in logs {
-        if request_ids.is_empty() || {
-            let mut request_id_found = false;
-            for request_id in &request_ids {
-                if *request_id == log.request_id {
-                    request_id_found = true;
-                    break;
-                }
-            }
-            request_id_found
-        } && match mode {
-            ReadModeLog::All => true,
-            ReadModeLog::Errors => {
-                matches!(
-                    &log.kind,
-                    LogKind::System(SystemLogKind::Error(_)) | LogKind::App(AppLogKind::Error(_))
-                )
-            }
-            ReadModeLog::Exchanges => {
-                matches!(
-                    &log.kind,
-                    LogKind::App(AppLogKind::Journal(
-                        AppLogJournalKind::BuyAsset(_)
-                            | AppLogJournalKind::SellAsset(_)
-                            | AppLogJournalKind::CreateUser { .. }
-                            | AppLogJournalKind::RegisterAsset { .. }
-                            | AppLogJournalKind::DepositCash(_)
-                            | AppLogJournalKind::WithdrawCash(_)
-                    ))
-                )
-            }
-        } {
-            collected.push(log);
+/// - `input` — объект [`File`] открытого файла лога
+/// - `mode` — режим парсинга логов [`ReadModeLog`]
+/// - `request_ids` — срез данных для фильтра по id запросам
+pub fn read_log<R: Read>(input: R, mode: ReadModeLog, request_ids: &[u32]) -> Vec<LogLine> {
+    let iter_logs = LogIterator::new(input).filter(|line| match mode {
+        ReadModeLog::All => true,
+        ReadModeLog::Errors => {
+            matches!(
+                &line.kind,
+                LogKind::System(SystemLogKind::Error(_)) | LogKind::App(AppLogKind::Error(_))
+            )
         }
+        ReadModeLog::Exchanges => {
+            matches!(
+                &line.kind,
+                LogKind::App(AppLogKind::Journal(
+                    AppLogJournalKind::BuyAsset(_)
+                        | AppLogJournalKind::SellAsset(_)
+                        | AppLogJournalKind::CreateUser { .. }
+                        | AppLogJournalKind::RegisterAsset { .. }
+                        | AppLogJournalKind::DepositCash(_)
+                        | AppLogJournalKind::WithdrawCash(_)
+                ))
+            )
+        }
+    });
+
+    if request_ids.is_empty() {
+        iter_logs.collect()
+    } else {
+        iter_logs
+            .filter(|line| request_ids.contains(&line.request_id))
+            .collect()
     }
-    collected
 }
 
 #[cfg(test)]
@@ -203,19 +162,21 @@ App::Journal BuyAsset UserBacket{"user_id":"Alice","backet":Backet{"asset_id":"m
 
     #[test]
     fn test_all() {
-        let refcell1: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>> =
-            std::rc::Rc::new(std::cell::RefCell::new(Box::new(SOURCE1.as_bytes())));
-        assert_eq!(
-            read_log(refcell1.clone(), ReadModeLog::All, vec![]).len(),
-            1
-        );
-        let refcell: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>> =
-            std::rc::Rc::new(std::cell::RefCell::new(Box::new(SOURCE.as_bytes())));
-        let all_parsed = read_log(refcell.clone(), ReadModeLog::All, vec![]);
+        let request_ids = Vec::new();
+
+        // Однострочный парсинг.
+        let sourced = SOURCE1.as_bytes();
+        assert_eq!(read_log(sourced, ReadModeLog::All, &request_ids).len(), 1);
+
+        // Многострочный парсинг.
+        let sourced = SOURCE.as_bytes();
+        let all_parsed = read_log(sourced, ReadModeLog::All, &request_ids);
+
         println!("all parsed:");
         all_parsed
             .iter()
             .for_each(|parsed| println!("  {:?}", parsed));
+
         // 2 для начала и конца строки (чтобы первая и последняя кавычки на отдельных строках были)
         // второе число - число пустых строк, которые оставлены для удобства чтения
         assert_eq!(all_parsed.len(), SOURCE.lines().count() - 2 - 7);

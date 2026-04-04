@@ -4,8 +4,9 @@ mod cli;
 mod parse;
 
 use crate::cli::GoCliArgs;
-use analysis::{MyReader, ReadModeLog};
-use anyhow::{Result as AnyhowResult, anyhow};
+use analysis::ReadModeLog;
+use anyhow::{anyhow, Result as AnyhowResult};
+use std::io::BufReader;
 
 fn main() -> AnyhowResult<()> {
     println!("Placeholder для экспериментов с cli");
@@ -38,10 +39,9 @@ fn parse_log_file() -> AnyhowResult<()> {
     let file = std::fs::File::open(&log_file)?;
     println!("Successfully opened file.");
 
-    let file: std::rc::Rc<std::cell::RefCell<Box<dyn MyReader>>> =
-        std::rc::Rc::new(std::cell::RefCell::new(Box::new(file)));
-
-    let logs = analysis::read_log(file.clone(), ReadModeLog::All, vec![]);
+    let buf_file = Box::new(BufReader::new(file));
+    let request_id: Vec<u32> = Vec::new();
+    let logs = analysis::read_log(buf_file, ReadModeLog::All, &request_id);
 
     println!("got logs:");
     logs.iter().for_each(|parsed| println!("  {:?}", parsed));
