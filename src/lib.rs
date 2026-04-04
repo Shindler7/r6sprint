@@ -8,7 +8,7 @@ pub use parser::{api::*, *};
 
 use std::{
     fmt::Debug,
-    io::{BufRead, BufReader, Error as IoError, Lines, Read, Result as IoResult},
+    io::{BufRead, BufReader, Lines, Read, Result as IoResult},
     iter::Filter,
 };
 
@@ -22,10 +22,13 @@ pub enum ReadModeLog {
     Exchanges,
 }
 
+/// Алиас для типа [`LogIterator`].
+type LogLines<R> = Filter<Lines<BufReader<R>>, fn(&IoResult<String>) -> bool>;
+
 /// Итератор, на выходе которого - строки разобранной структуры данных.
 #[derive(Debug)]
 struct LogIterator<R: Read> {
-    lines: Filter<Lines<BufReader<R>>, fn(&Result<String, IoError>) -> bool>,
+    lines: LogLines<R>,
 }
 
 impl<R: Read> LogIterator<R> {

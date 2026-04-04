@@ -35,6 +35,7 @@ impl Parser for U32 {
 
 /// Знаковые числа.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct I32;
 
 impl Parser for I32 {
