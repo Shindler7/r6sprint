@@ -4,8 +4,8 @@ mod cli;
 // mod parse;
 
 use crate::cli::GoCliArgs;
-use analysis::{api, ReadModeLog};
-use anyhow::{anyhow, Result as AnyhowResult};
+use analysis::{ReadModeLog, api};
+use anyhow::{Result as AnyhowResult, anyhow};
 use std::io::BufReader;
 
 fn main() -> AnyhowResult<()> {
