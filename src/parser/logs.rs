@@ -11,7 +11,7 @@ use crate::parser::{
 };
 
 /// Статус, которые можно парсить.
-pub(crate) enum Status {
+pub enum Status {
     Ok,
     Err(String),
 }

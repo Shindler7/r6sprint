@@ -69,6 +69,7 @@ pub(crate) fn all2<A0: Parser, A1: Parser>(a0: A0, a1: A1) -> All<(A0, A1)> {
 
 /// Конструктор [All] для трёх парсеров
 /// (в Rust нет чего-то, вроде variadic templates из C++)
+#[allow(dead_code)]
 pub(crate) fn all3<A0: Parser, A1: Parser, A2: Parser>(
     a0: A0,
     a1: A1,
@@ -81,6 +82,7 @@ pub(crate) fn all3<A0: Parser, A1: Parser, A2: Parser>(
 
 /// Конструктор [All] для четырёх парсеров
 /// (в Rust нет чего-то, вроде variadic templates из C++)
+#[allow(dead_code)]
 pub(crate) fn all4<A0: Parser, A1: Parser, A2: Parser, A3: Parser>(
     a0: A0,
     a1: A1,

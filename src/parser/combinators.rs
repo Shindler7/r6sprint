@@ -63,17 +63,6 @@ impl Parser for Unquote {
     }
 }
 
-/// Парсер, возвращающий результат как есть.
-#[derive(Debug, Clone)]
-pub(crate) struct AsIs;
-
-impl Parser for AsIs {
-    type Dest = String;
-    fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        Ok((&input[input.len()..], input.into()))
-    }
-}
-
 /// Парсер константных строк
 ///
 /// (аналог `nom::bytes::complete::tag`).
@@ -496,12 +485,6 @@ impl<T: Parser> Parser for Take<T> {
         }
         Ok((remaining, result))
     }
-}
-
-/// Конструкция 'либо-либо'.
-pub(crate) enum Either<Left, Right> {
-    Left(Left),
-    Right(Right),
 }
 
 #[cfg(test)]

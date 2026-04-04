@@ -11,6 +11,6 @@ pub(crate) mod traits;
 // Реэкспорт доменных и log-типов, чтобы не ломать внешние use.
 pub use domain::{Announcements, AssetDsc, AuthData, Backet, UserBacket, UserBackets, UserCash};
 pub use logs::{
-    AppLogErrorKind, AppLogJournalKind, AppLogKind, AppLogTraceKind, LogKind, LogLine,
+    AppLogErrorKind, AppLogJournalKind, AppLogKind, AppLogTraceKind, LogKind, LogLine, Status,
     SystemLogErrorKind, SystemLogKind, SystemLogTraceKind,
 };
