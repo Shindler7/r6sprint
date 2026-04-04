@@ -30,9 +30,9 @@ struct LogIterator<R: Read> {
 
 impl<R: Read> LogIterator<R> {
     /// Создать итератор для данных лог-файла.
-    fn new(r: R) -> Self {
+    fn new(reader: R) -> Self {
         Self {
-            lines: BufReader::new(r).lines().filter(Self::non_empty_lines),
+            lines: BufReader::new(reader).lines().filter(Self::non_empty_lines),
         }
     }
 

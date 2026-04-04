@@ -11,7 +11,6 @@ use crate::parser::{
 
 const AUTHDATA_SIZE: usize = 1024;
 
-// подсказка: довольно много места на стэке
 /// Данные для авторизации
 #[derive(Debug, Clone, PartialEq)]
 pub struct AuthData(pub(crate) [u8; AUTHDATA_SIZE]);
@@ -25,7 +24,7 @@ impl Parsable for AuthData {
     }
 }
 
-/// Пара 'сокращённое название предмета' - 'его описание'
+/// Пара 'сокращённое название предмета' - 'его описание'.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AssetDsc {
     // `dsc` aka `description`
@@ -58,22 +57,24 @@ impl Parsable for AssetDsc {
     }
 }
 
-/// Сведение о предмете в некотором количестве
+/// Сведение о предмете в некотором количестве.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Backet {
     pub asset_id: String,
     pub count: u32,
 }
 
+/// Тип-алиас для повторных реализаций.
+type BucketFieldsParser = Delimited<
+    All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
+    Permutation<(KeyValue<Unquote>, KeyValue<stdp::U32>)>,
+    StripWhitespace<Tag>,
+>;
+
+type BucketParser<T> = Map<BucketFieldsParser, fn((String, u32)) -> T>;
+
 impl Parsable for Backet {
-    type Parser = Map<
-        Delimited<
-            All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(KeyValue<Unquote>, KeyValue<stdp::U32>)>,
-            StripWhitespace<Tag>,
-        >,
-        fn((String, u32)) -> Self,
-    >;
+    type Parser = BucketParser<Self>;
     fn parser() -> Self::Parser {
         map(
             delimited(
@@ -97,14 +98,7 @@ pub struct UserCash {
 }
 
 impl Parsable for UserCash {
-    type Parser = Map<
-        Delimited<
-            All<(StripWhitespace<Tag>, StripWhitespace<Tag>)>,
-            Permutation<(KeyValue<Unquote>, KeyValue<stdp::U32>)>,
-            StripWhitespace<Tag>,
-        >,
-        fn((String, u32)) -> Self,
-    >;
+    type Parser = BucketParser<Self>;
     fn parser() -> Self::Parser {
         map(
             delimited(

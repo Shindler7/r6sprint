@@ -52,7 +52,7 @@ pub(crate) fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     Ok((&input[1 + quote_byteidx..], &input[..quote_byteidx]))
 }
 
-/// Парсер кавычек
+/// Парсер кавычек.
 #[derive(Debug, Clone)]
 pub struct Unquote;
 
@@ -63,7 +63,7 @@ impl Parser for Unquote {
     }
 }
 
-/// Парсер, возвращающий результат как есть
+/// Парсер, возвращающий результат как есть.
 #[derive(Debug, Clone)]
 pub(crate) struct AsIs;
 
@@ -170,7 +170,7 @@ impl<T: Parser, Dest: Sized, M: Fn(T::Dest) -> Dest> Parser for Map<T, M> {
 }
 
 /// Комбинатор с отбрасываемым префиксом, упрощённая версия [Delimited]
-/// (аналог `preceeded` из `nom`)
+/// (аналог `preceeded` из `nom`).
 #[derive(Debug, Clone)]
 pub struct Preceded<Prefix, T> {
     pub(crate) prefix_to_ignore: Prefix,
@@ -190,7 +190,7 @@ where
 }
 
 /// Комбинатор, который требует, чтобы все дочерние парсеры отработали,
-/// (аналог `all` из `nom`)
+/// (аналог `all` из `nom`).
 #[derive(Debug, Clone)]
 pub struct All<T> {
     pub(crate) parser: T,
@@ -274,7 +274,7 @@ where
 /// Комбинатор, который возвращает результаты дочерних парсеров, если их
 /// удалось применить друг после друга в любом порядке. Результат возвращается в
 /// том порядке, в каком `Permutation` был сконструирован
-/// (аналог `permutation` из `nom`)
+/// (аналог `permutation` из `nom`).
 #[derive(Debug, Clone)]
 pub struct Permutation<T> {
     pub(crate) parsers: T,
@@ -362,7 +362,7 @@ where
 /// Комбинатор списка из любого числа элементов, которые надо читать
 /// вложенным парсером. Граница списка определяется квадратными (`[`&`]`)
 /// скобками.
-/// Для простоты реализации, после каждого элемента списка должна быть запятая
+/// Для простоты реализации, после каждого элемента списка должна быть запятая.
 #[derive(Debug, Clone)]
 pub struct List<T> {
     pub(crate) parser: T,
@@ -392,9 +392,8 @@ impl<T: Parser> Parser for List<T> {
     }
 }
 
-/// Комбинатор, который вернёт тот результат, который будет успешно
-/// получен первым из дочерних комбинаторов
-/// (аналог `alt` из `nom`)
+/// Комбинатор вернёт результат, который будет успешно
+/// получен первым из дочерних комбинаторов (аналог `alt` из `nom`).
 #[derive(Debug, Clone)]
 pub struct Alt<T> {
     pub(crate) parser: T,
@@ -479,7 +478,7 @@ where
 }
 
 /// Комбинатор для применения дочернего парсера N раз
-/// (аналог `take` из `nom`)
+/// (аналог `take` из `nom`).
 pub struct Take<T> {
     pub(crate) count: usize,
     pub(crate) parser: T,
@@ -499,7 +498,7 @@ impl<T: Parser> Parser for Take<T> {
     }
 }
 
-/// Конструкция 'либо-либо'
+/// Конструкция 'либо-либо'.
 pub(crate) enum Either<Left, Right> {
     Left(Left),
     Right(Right),
