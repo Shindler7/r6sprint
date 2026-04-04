@@ -1,6 +1,9 @@
 //! Публичный API парсинга.
 
-use crate::parser::traits::{Parsable, Parser};
+use crate::parser::{
+    errors::ParsersError,
+    traits::{Parsable, Parser},
+};
 
 /// Парсит `input` в значение типа `T`.
 ///
@@ -20,6 +23,8 @@ use crate::parser::traits::{Parsable, Parser};
 /// let result = api::just_parse::<Announcements>(&demo);
 /// assert!(result.is_ok());
 /// ```
-pub fn just_parse<T: Parsable>(input: &str) -> Result<(&str, T), ()> {
-    <T as Parsable>::parser().parse(input)
+pub fn just_parse<T: Parsable>(input: &str) -> Result<(&str, T), ParsersError> {
+    <T as Parsable>::parser()
+        .parse(input)
+        .map_err(|_| ParsersError::UnexpectedError)
 }
