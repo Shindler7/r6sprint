@@ -5,15 +5,10 @@ use crate::parser::traits::Parser;
 /// Обернуть строку в кавычки, экранировав кавычки, которые в строке уже есть
 pub(crate) fn quote(input: &str) -> String {
     let mut result = String::from("\"");
-    result.extend(
-        input
-            .chars()
-            .map(|c| match c {
-                '\\' | '"' => ['\\', c].into_iter().take(2),
-                _ => [c, ' '].into_iter().take(1),
-            })
-            .flatten(),
-    );
+    result.extend(input.chars().flat_map(|c| match c {
+        '\\' | '"' => ['\\', c].into_iter().take(2),
+        _ => [c, ' '].into_iter().take(1),
+    }));
     result.push('"');
     result
 }
@@ -54,7 +49,7 @@ pub(crate) fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
 
 /// Парсер кавычек
 #[derive(Debug, Clone)]
-pub(crate) struct Unquote;
+pub struct Unquote;
 
 impl Parser for Unquote {
     type Dest = String;
@@ -76,7 +71,7 @@ impl Parser for AsIs {
 /// Парсер константных строк
 /// (аналог `nom::bytes::complete::tag`)
 #[derive(Debug, Clone)]
-pub(crate) struct Tag {
+pub struct Tag {
     pub(crate) tag: &'static str,
 }
 
@@ -87,9 +82,15 @@ impl Parser for Tag {
     }
 }
 
-/// Парсер [тэга](Tag), обёрнутого в кавычки
+/// Парсер [тэга](Tag), обёрнутого в кавычки.
 #[derive(Debug, Clone)]
-pub(crate) struct QuotedTag(pub(crate) Tag);
+pub struct QuotedTag(Tag);
+
+impl QuotedTag {
+    pub(crate) fn new(tag: &'static str) -> Self {
+        Self(Tag { tag })
+    }
+}
 
 impl Parser for QuotedTag {
     type Dest = ();
@@ -104,7 +105,7 @@ impl Parser for QuotedTag {
 
 /// Комбинатор, пробрасывающий строку без лидирующих пробелов
 #[derive(Debug, Clone)]
-pub(crate) struct StripWhitespace<T> {
+pub struct StripWhitespace<T> {
     pub(crate) parser: T,
 }
 impl<T: Parser> Parser for StripWhitespace<T> {
@@ -124,7 +125,7 @@ impl<T: Parser> Parser for StripWhitespace<T> {
 /// строкой - строка, оставшаяся после парсера3.
 /// (аналог `delimited` из `nom`)
 #[derive(Debug, Clone)]
-pub(crate) struct Delimited<Prefix, T, Suffix> {
+pub struct Delimited<Prefix, T, Suffix> {
     pub(crate) prefix_to_ignore: Prefix,
     pub(crate) dest_parser: T,
     pub(crate) suffix_to_ignore: Suffix,
@@ -148,7 +149,7 @@ where
 /// Комбинатор-отображение. Парсит дочерним парсером, преобразует результат так,
 /// как вызывающему хочется
 #[derive(Debug, Clone)]
-pub(crate) struct Map<T, M> {
+pub struct Map<T, M> {
     pub(crate) parser: T,
     pub(crate) map: M,
 }
@@ -164,7 +165,7 @@ impl<T: Parser, Dest: Sized, M: Fn(T::Dest) -> Dest> Parser for Map<T, M> {
 /// Комбинатор с отбрасываемым префиксом, упрощённая версия [Delimited]
 /// (аналог `preceeded` из `nom`)
 #[derive(Debug, Clone)]
-pub(crate) struct Preceded<Prefix, T> {
+pub struct Preceded<Prefix, T> {
     pub(crate) prefix_to_ignore: Prefix,
     pub(crate) dest_parser: T,
 }
@@ -184,7 +185,7 @@ where
 /// Комбинатор, который требует, чтобы все дочерние парсеры отработали,
 /// (аналог `all` из `nom`)
 #[derive(Debug, Clone)]
-pub(crate) struct All<T> {
+pub struct All<T> {
     pub(crate) parser: T,
 }
 
@@ -240,11 +241,11 @@ where
     }
 }
 
-/// Комбинатор, который вытаскивает значения из пары `"ключ":значение,`.
+/// Комбинатор, который вытаскивает значения из пары `"ключ":значение, `.
 /// Для простоты реализации, запятая всегда нужна в конце пары ключ-значение,
-/// простое '"ключ":значение' читаться не будет
+/// простое '"ключ":значение' читаться не будет.
 #[derive(Debug, Clone)]
-pub(crate) struct KeyValue<T> {
+pub struct KeyValue<T> {
     pub(crate) parser: Delimited<
         All<(StripWhitespace<QuotedTag>, StripWhitespace<Tag>)>,
         StripWhitespace<T>,
@@ -267,7 +268,7 @@ where
 /// том порядке, в каком `Permutation` был сконструирован
 /// (аналог `permutation` из `nom`)
 #[derive(Debug, Clone)]
-pub(crate) struct Permutation<T> {
+pub struct Permutation<T> {
     pub(crate) parsers: T,
 }
 
@@ -355,7 +356,7 @@ where
 /// скобками.
 /// Для простоты реализации, после каждого элемента списка должна быть запятая
 #[derive(Debug, Clone)]
-pub(crate) struct List<T> {
+pub struct List<T> {
     pub(crate) parser: T,
 }
 
@@ -387,7 +388,7 @@ impl<T: Parser> Parser for List<T> {
 /// получен первым из дочерних комбинаторов
 /// (аналог `alt` из `nom`)
 #[derive(Debug, Clone)]
-pub(crate) struct Alt<T> {
+pub struct Alt<T> {
     pub(crate) parser: T,
 }
 
@@ -471,7 +472,7 @@ where
 
 /// Комбинатор для применения дочернего парсера N раз
 /// (аналог `take` из `nom`)
-pub(crate) struct Take<T> {
+pub struct Take<T> {
     pub(crate) count: usize,
     pub(crate) parser: T,
 }

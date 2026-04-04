@@ -4,7 +4,7 @@ use crate::parser::traits::Parser;
 
 /// Беззнаковые числа.
 #[derive(Debug)]
-pub(crate) struct U32;
+pub struct U32;
 
 impl Parser for U32 {
     type Dest = u32;
@@ -58,7 +58,8 @@ impl Parser for I32 {
 
 /// Шестнадцатеричные байты (пригодится при парсинге блобов).
 #[derive(Debug, Clone)]
-pub(crate) struct Byte;
+pub struct Byte;
+
 impl Parser for Byte {
     type Dest = u8;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {

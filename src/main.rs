@@ -4,8 +4,8 @@ mod cli;
 // mod parse;
 
 use crate::cli::GoCliArgs;
-use analysis::{ReadModeLog, api};
-use anyhow::{Result as AnyhowResult, anyhow};
+use analysis::{api, Announcements, ReadModeLog};
+use anyhow::{anyhow, Result as AnyhowResult};
 use std::io::BufReader;
 
 fn main() -> AnyhowResult<()> {
@@ -23,7 +23,7 @@ fn parsing_demo() -> AnyhowResult<()> {
         r#"[UserBackets{"user_id":"Bob","backets":[Backet{"asset_id":"milk","count":3,},],},]"#
             .to_string();
 
-    let announcements = api::just_parse_announcements(&parsing_demo)
+    let announcements = api::just_parse::<Announcements>(&parsing_demo)
         .map_err(|_| anyhow!("An error occurred while processing log data in the demo mode."))?;
 
     println!("demo-parsed: {:?}", announcements);

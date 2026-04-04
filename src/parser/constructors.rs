@@ -18,7 +18,7 @@ pub(crate) fn tag(tag: &'static str) -> Tag {
 
 /// Конструктор [QuotedTag]
 pub(crate) fn quoted_tag(tag: &'static str) -> QuotedTag {
-    QuotedTag(Tag { tag })
+    QuotedTag::new(tag)
 }
 
 /// Конструктор [StripWhitespace]
