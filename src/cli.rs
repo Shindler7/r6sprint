@@ -11,7 +11,7 @@ use std::path::PathBuf;
 pub(crate) struct GoCliArgs {
     /// log-file name.
     #[argh(positional)]
-    log_filename: PathBuf,
+    log_filename: Option<PathBuf>,
 }
 
 impl GoCliArgs {
@@ -21,15 +21,19 @@ impl GoCliArgs {
     }
 
     /// Предоставить имя лог-файла.
-    pub(crate) fn filename(&self) -> &PathBuf {
+    pub(crate) fn filename(&self) -> &Option<PathBuf> {
         &self.log_filename
     }
 
     /// Предоставить полный путь к log-файлу.
     ///
     /// Соединяет переданное имя файла из командной строки с `current_dir`.
-    pub(crate) fn path_to_log_file(&self) -> AnyhowResult<PathBuf> {
-        Ok(Self::get_current_dir()?.join(self.filename()))
+    pub(crate) fn path_to_log_file(&self) -> AnyhowResult<Option<PathBuf>> {
+        if let Some(log_file) = &self.filename() {
+            Ok(Some(Self::get_current_dir()?.join(log_file)))
+        } else {
+            Ok(None)
+        }
     }
 
     /// Предоставить текущую директорию.

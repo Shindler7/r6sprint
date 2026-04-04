@@ -5,7 +5,7 @@ mod parse;
 
 use crate::cli::GoCliArgs;
 use analysis::ReadModeLog;
-use anyhow::{anyhow, Result as AnyhowResult};
+use anyhow::{Result as AnyhowResult, anyhow};
 use std::io::BufReader;
 
 fn main() -> AnyhowResult<()> {
@@ -33,7 +33,10 @@ fn parsing_demo() -> AnyhowResult<()> {
 
 /// Парсинг log-файла, переданного через командную строку.
 fn parse_log_file() -> AnyhowResult<()> {
-    let log_file = GoCliArgs::new().path_to_log_file()?;
+    let Some(log_file) = GoCliArgs::new().path_to_log_file()? else {
+        println!("No log file provided.");
+        return Ok(());
+    };
 
     println!("Trying opening file '{}'", log_file.to_string_lossy());
     let file = std::fs::File::open(&log_file)?;
