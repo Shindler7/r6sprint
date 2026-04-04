@@ -2,8 +2,9 @@
 //!
 //! "Яндекс Практикум", "Rust для действующих разработчиков", 2026.
 
-pub mod parse;
-use parse::*;
+pub mod parser;
+
+pub use parser::{api::*, *};
 
 use std::{
     fmt::Debug,
