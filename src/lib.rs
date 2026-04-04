@@ -51,7 +51,7 @@ impl<R: Read> Iterator for LogIterator<R> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let line = self.lines.next()?.ok()?;
-        let (remaining, result) = LOG_LINE_PARSER.parse(line.trim()).ok()?;
+        let (remaining, result) = just_parse::<LogLine>(line.trim()).ok()?;
         remaining.trim().is_empty().then_some(result)
     }
 }
