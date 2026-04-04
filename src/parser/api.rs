@@ -27,7 +27,7 @@ pub fn just_parse<T: Parsable>(input: &str) -> Result<(&str, T), ()> {
     <T as Parsable>::parser().parse(input)
 }
 
-/// Парсер строки логов
+/// Парсер строки логов.
 pub struct LogLineParser {
     parser: std::sync::OnceLock<<LogLine as Parsable>::Parser>,
 }
@@ -35,7 +35,7 @@ pub struct LogLineParser {
 impl LogLineParser {
     pub fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, LogLine), ()> {
         self.parser
-            .get_or_init(|| <LogLine as Parsable>::parser())
+            .get_or_init(<LogLine as Parsable>::parser)
             .parse(input)
     }
 }

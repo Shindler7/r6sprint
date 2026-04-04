@@ -78,25 +78,27 @@ impl<R: Read> Iterator for LogIterator<R> {
 pub fn read_log<R: Read>(input: R, mode: ReadModeLog, request_ids: &[u32]) -> Vec<LogLine> {
     let iter_logs = LogIterator::new(input).filter(|line| match mode {
         ReadModeLog::All => true,
-        ReadModeLog::Errors => {
-            matches!(
-                &line.kind,
-                LogKind::System(SystemLogKind::Error(_)) | LogKind::App(AppLogKind::Error(_))
-            )
-        }
-        ReadModeLog::Exchanges => {
-            matches!(
-                &line.kind,
-                LogKind::App(AppLogKind::Journal(
+
+        ReadModeLog::Errors => match &line.kind {
+            LogKind::System(SystemLogKind::Error(_)) => true,
+            LogKind::App(app) => matches!(app.as_ref(), AppLogKind::Error(_)),
+            _ => false,
+        },
+
+        ReadModeLog::Exchanges => match &line.kind {
+            LogKind::App(app) => matches!(
+                app.as_ref(),
+                AppLogKind::Journal(
                     AppLogJournalKind::BuyAsset(_)
                         | AppLogJournalKind::SellAsset(_)
                         | AppLogJournalKind::CreateUser { .. }
                         | AppLogJournalKind::RegisterAsset { .. }
                         | AppLogJournalKind::DepositCash(_)
                         | AppLogJournalKind::WithdrawCash(_)
-                ))
-            )
-        }
+                )
+            ),
+            _ => false,
+        },
     });
 
     if request_ids.is_empty() {

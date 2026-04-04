@@ -96,10 +96,10 @@ impl Parser for QuotedTag {
     type Dest = ();
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
         let (remaining, candidate) = do_unquote_non_escaped(input)?;
-        if !self.0.parse(&candidate)?.0.is_empty() {
+        if !self.0.parse(candidate)?.0.is_empty() {
             return Err(());
         }
-        Ok((&remaining, ()))
+        Ok((remaining, ()))
     }
 }
 
@@ -138,7 +138,7 @@ where
 {
     type Dest = T::Dest;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
-        let (remaining, _) = self.prefix_to_ignore.parse(&input)?;
+        let (remaining, _) = self.prefix_to_ignore.parse(input)?;
         let (remaining, result) = self.dest_parser.parse(remaining)?;
         self.suffix_to_ignore
             .parse(remaining)
@@ -245,6 +245,7 @@ where
 /// Для простоты реализации, запятая всегда нужна в конце пары ключ-значение,
 /// простое '"ключ":значение' читаться не будет.
 #[derive(Debug, Clone)]
+#[allow(clippy::type_complexity)]
 pub struct KeyValue<T> {
     pub(crate) parser: Delimited<
         All<(StripWhitespace<QuotedTag>, StripWhitespace<Tag>)>,

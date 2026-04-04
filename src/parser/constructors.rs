@@ -176,6 +176,7 @@ pub(crate) fn alt4<
 
 /// Конструктор [Alt] для восьми парсеров
 /// (в Rust нет чего-то, вроде variadic templates из C++)
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub(crate) fn alt8<
     Dest,
     A0: Parser<Dest = Dest>,
