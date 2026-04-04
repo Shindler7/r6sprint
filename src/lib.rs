@@ -1,3 +1,7 @@
+//! Библиотека предоставляющая инфраструктуру для парсинга лог-файлов.
+//!
+//! "Яндекс Практикум", "Rust для действующих разработчиков", 2026.
+
 pub mod parse;
 use parse::*;
 
@@ -24,6 +28,7 @@ struct LogIterator<R: Read> {
 }
 
 impl<R: Read> LogIterator<R> {
+    /// Создать итератор для данных лог-файла.
     fn new(r: R) -> Self {
         Self {
             lines: BufReader::new(r).lines().filter(Self::non_empty_lines),
@@ -50,13 +55,25 @@ impl<R: Read> Iterator for LogIterator<R> {
     }
 }
 
-/// Принимает поток данных из файла, отдаёт обработанные логи.
+/// Принимает поток данных из файла, отдаёт обработанные строки логов.
 ///
 /// ## Аргументы
 ///
 /// - `input` — объект [`File`] открытого файла лога
 /// - `mode` — режим парсинга логов [`ReadModeLog`]
 /// - `request_ids` — срез данных для фильтра по id запросам
+///
+/// ## Пример
+///
+/// ```
+/// use analysis::{read_log, ReadModeLog};
+///
+/// let data = r#"System::Error NetworkError "url unknown" requestid=1"#;
+/// let request_ids = Vec::new();
+///
+/// let result = read_log(data.as_bytes(), ReadModeLog::All, &request_ids);
+/// assert_eq!(result.len(), 1);
+/// ```
 pub fn read_log<R: Read>(input: R, mode: ReadModeLog, request_ids: &[u32]) -> Vec<LogLine> {
     let iter_logs = LogIterator::new(input).filter(|line| match mode {
         ReadModeLog::All => true,
