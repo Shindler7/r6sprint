@@ -10,7 +10,7 @@ use crate::parser::{
     traits::Parsable,
 };
 
-/// Статус, которые можно парсить
+/// Статус, которые можно парсить.
 pub(crate) enum Status {
     Ok,
     Err(String),
@@ -88,7 +88,7 @@ pub enum AppLogTraceKind {
     GetResponse(String),
 }
 
-/// Журнал [приложения](AppLogKind), самые высокоуровневые события
+/// Журнал [приложения](AppLogKind), самые высокоуровневые события.
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppLogJournalKind {
     CreateUser {

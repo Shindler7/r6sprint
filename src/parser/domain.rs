@@ -90,7 +90,7 @@ impl Parsable for Backet {
     }
 }
 
-/// Фиатные деньги конкретного пользователя
+/// Фиатные деньги конкретного пользователя.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserCash {
     pub user_id: String,
@@ -117,7 +117,7 @@ impl Parsable for UserCash {
     }
 }
 
-/// [Backet] конкретного пользователя
+/// [Backet] конкретного пользователя.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserBacket {
     pub user_id: String,
@@ -188,7 +188,7 @@ impl Parsable for UserBackets {
     }
 }
 
-/// Список опубликованных бакетов
+/// Список опубликованных бакетов.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Announcements(pub(crate) Vec<UserBackets>);
 

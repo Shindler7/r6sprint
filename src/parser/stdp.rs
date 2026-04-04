@@ -1,6 +1,7 @@
 //! Парсеры для стандартных типов.
 
 use crate::parser::traits::Parser;
+use std::num::{NonZeroI32, NonZeroU32};
 
 /// Беззнаковые числа.
 #[derive(Debug)]
@@ -23,16 +24,12 @@ impl Parser for U32 {
             })
             .unwrap_or(remaining.len());
 
-        let value = u32::from_str_radix(&remaining[..end_idx], if is_hex { 16 } else { 10 })
-            .map_err(|_| ())?;
-        // подсказка: вместо if можно использовать tight-тип std::num::NonZeroU32
-        //            (ограничиться NonZeroU32::new(value).ok_or(()).get() - норм)
-        //            или даже заиспользовать tightness
-        if value == 0 {
-            return Err(()); // в наших логах нет нулей, нуль в операции - фикция
-        }
+        let radix = if is_hex { 16 } else { 10 };
+        let value =
+            NonZeroU32::new(u32::from_str_radix(&remaining[..end_idx], radix).map_err(|_| ())?)
+                .ok_or(())?;
 
-        Ok((&remaining[end_idx..], value))
+        Ok((&remaining[end_idx..], value.into()))
     }
 }
 
@@ -48,11 +45,10 @@ impl Parser for I32 {
             .skip(1)
             .find_map(|(idx, c)| (!c.is_ascii_digit()).then_some(idx))
             .unwrap_or(input.len());
-        let value = input[..end_idx].parse().map_err(|_| ())?;
-        if value == 0 {
-            return Err(()); // в наших логах нет нулей, нуль в операции - фикция
-        }
-        Ok((&input[end_idx..], value))
+
+        let value = NonZeroI32::new(input[..end_idx].parse::<i32>().map_err(|_| ())?).ok_or(())?;
+
+        Ok((&input[end_idx..], value.into()))
     }
 }
 
