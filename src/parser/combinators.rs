@@ -2,7 +2,9 @@
 
 use crate::parser::traits::Parser;
 
-/// Обернуть строку в кавычки, экранировав кавычки, которые в строке уже есть
+/// Обернуть строку в кавычки, экранировав кавычки, которые в строке уже есть.
+#[cfg(debug_assertions)]
+#[allow(dead_code)]
 pub(crate) fn quote(input: &str) -> String {
     let mut result = String::from("\"");
     result.extend(input.chars().flat_map(|c| match c {
@@ -13,31 +15,34 @@ pub(crate) fn quote(input: &str) -> String {
     result
 }
 
-/// Распарсить строку, которую ранее [обернули в кавычки](quote)
+/// Распарсить строку, которую ранее [обернули в кавычки](quote).
 // `"abc\"def\\ghi"nice` -> (`abcd"def\ghi`, `nice`)
 pub(crate) fn do_unquote(input: &str) -> Result<(&str, String), ()> {
-    let mut result = String::new();
-    let mut escaped_now = false;
-    let mut chars = input.strip_prefix("\"").ok_or(())?.chars();
-    while let Some(c) = chars.next() {
-        match (c, escaped_now) {
-            ('"' | '\\', true) => {
-                result.push(c);
-                escaped_now = false;
-            }
-            ('\\', false) => escaped_now = true,
-            ('"', false) => return Ok((chars.as_str(), result)),
-            (c, _) => {
-                result.push(c);
-                escaped_now = false;
-            }
+    let mut out = String::with_capacity(input.len().saturating_sub(2));
+    let mut escaped = false;
+    let mut chars = input.strip_prefix('"').ok_or(())?.chars();
+
+    for c in chars.by_ref() {
+        if escaped {
+            out.push(c);
+            escaped = false;
+            continue;
+        }
+
+        match c {
+            '\\' => escaped = true,
+            '"' => return Ok((chars.as_str(), out)),
+            _ => out.push(c),
         }
     }
+
     Err(()) // строка кончилась, не закрыв кавычку
 }
 
-/// Распарсить строку, обёрную в кавычки
-/// (сокращённая версия [do_unquote], в которой вложенные кавычки не предусмотрены)
+/// Распарсить строку, обёрнутую в кавычки.
+///
+/// Сокращённая реализация [`do_unquote`], в которой вложенные кавычки
+/// не предусмотрены.
 pub(crate) fn do_unquote_non_escaped(input: &str) -> Result<(&str, &str), ()> {
     let input = input.strip_prefix("\"").ok_or(())?;
     let quote_byteidx = input.find('"').ok_or(())?;
@@ -61,6 +66,7 @@ impl Parser for Unquote {
 /// Парсер, возвращающий результат как есть
 #[derive(Debug, Clone)]
 pub(crate) struct AsIs;
+
 impl Parser for AsIs {
     type Dest = String;
     fn parse<'a>(&self, input: &'a str) -> Result<(&'a str, Self::Dest), ()> {
@@ -69,7 +75,8 @@ impl Parser for AsIs {
 }
 
 /// Парсер константных строк
-/// (аналог `nom::bytes::complete::tag`)
+///
+/// (аналог `nom::bytes::complete::tag`).
 #[derive(Debug, Clone)]
 pub struct Tag {
     pub(crate) tag: &'static str,
