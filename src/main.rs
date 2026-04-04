@@ -23,7 +23,7 @@ fn parsing_demo() -> AnyhowResult<()> {
         r#"[UserBackets{"user_id":"Bob","backets":[Backet{"asset_id":"milk","count":3,},],},]"#
             .to_string();
 
-    let announcements = parse::just_parse_anouncements(parsing_demo)
+    let announcements = parse::just_parse_announcements(&parsing_demo)
         .map_err(|_| anyhow!("An error occurred while processing log data in the demo mode."))?;
 
     println!("demo-parsed: {:?}", announcements);

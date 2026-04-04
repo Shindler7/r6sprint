@@ -21,7 +21,7 @@ pub enum ReadModeLog {
     Exchanges,
 }
 
-/// Итератор, на выходе которого - строки распарсенной структуры данных.
+/// Итератор, на выходе которого - строки разобранной структуры данных.
 #[derive(Debug)]
 struct LogIterator<R: Read> {
     lines: Filter<Lines<BufReader<R>>, fn(&Result<String, IoError>) -> bool>,
@@ -50,7 +50,7 @@ impl<R: Read> Iterator for LogIterator<R> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let line = self.lines.next()?.ok()?;
-        let (remaining, result) = LOG_LINE_PARSER.parse(line.trim().to_string()).ok()?;
+        let (remaining, result) = LOG_LINE_PARSER.parse(line.trim()).ok()?;
         remaining.trim().is_empty().then_some(result)
     }
 }
