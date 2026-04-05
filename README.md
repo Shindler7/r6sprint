@@ -67,6 +67,17 @@ cargo test
 cargo test -- --nocapture
 ```
 
+## История версий
+
+### 0.1.1 от 05.04.2026
+
+- исправлена ошибка в парсере `AppLogJournalKind`: маппинг `WithdrawCash` на
+  `DepositCash`
+- добавлен файл workflow для `Github Actions`
+- улучшения кода после прогонки `cargo clippy --all-targets --all-features`
+
 ## Благодарности
 
-Авторам курса "Rust для действующих разработчиков", Яндекс.Практикум.
+Авторам курса
+"[Rust для действующих разработчиков](https://practicum.yandex.ru/middle-rust/?from=catalog)",
+`Яндекс.Практикум`.

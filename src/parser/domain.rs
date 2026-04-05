@@ -222,14 +222,24 @@ mod tests {
                 strip_whitespace(tag("AssetDsc")),
                 strip_whitespace(tag("{"))
             )
-            .parse(" AssetDsc { ".into()),
-            Ok(("".into(), ((), ())))
+            .parse(" AssetDsc { "),
+            Ok(("", ((), ())))
         );
 
         assert_eq!(
-            AssetDsc::parser().parse(r#"AssetDsc{"id":"usd","dsc":"USA dollar",}"#.into()),
+            AssetDsc::parser().parse(r#"AssetDsc{"id":"usd","dsc":"USA dollar",}"#),
             Ok((
-                "".into(),
+                "",
+                AssetDsc {
+                    id: "usd".into(),
+                    dsc: "USA dollar".into()
+                }
+            ))
+        );
+        assert_eq!(
+            AssetDsc::parser().parse(r#" AssetDsc { "id" : "usd" , "dsc" : "USA dollar" , } "#),
+            Ok((
+                "",
                 AssetDsc {
                     id: "usd".into(),
                     dsc: "USA dollar".into()
@@ -238,20 +248,9 @@ mod tests {
         );
         assert_eq!(
             AssetDsc::parser()
-                .parse(r#" AssetDsc { "id" : "usd" , "dsc" : "USA dollar" , } "#.into()),
+                .parse(r#" AssetDsc { "id" : "usd" , "dsc" : "USA dollar" , } nice "#),
             Ok((
-                "".into(),
-                AssetDsc {
-                    id: "usd".into(),
-                    dsc: "USA dollar".into()
-                }
-            ))
-        );
-        assert_eq!(
-            AssetDsc::parser()
-                .parse(r#" AssetDsc { "id" : "usd" , "dsc" : "USA dollar" , } nice "#.into()),
-            Ok((
-                "nice ".into(),
+                "nice ",
                 AssetDsc {
                     id: "usd".into(),
                     dsc: "USA dollar".into()
@@ -260,9 +259,9 @@ mod tests {
         );
 
         assert_eq!(
-            AssetDsc::parser().parse(r#"AssetDsc{"dsc":"USA dollar","id":"usd",}"#.into()),
+            AssetDsc::parser().parse(r#"AssetDsc{"dsc":"USA dollar","id":"usd",}"#),
             Ok((
-                "".into(),
+                "",
                 AssetDsc {
                     id: "usd".into(),
                     dsc: "USA dollar".into()
@@ -274,9 +273,9 @@ mod tests {
     #[test]
     fn test_backet() {
         assert_eq!(
-            Backet::parser().parse(r#"Backet{"asset_id":"usd","count":42,}"#.into()),
+            Backet::parser().parse(r#"Backet{"asset_id":"usd","count":42,}"#),
             Ok((
-                "".into(),
+                "",
                 Backet {
                     asset_id: "usd".into(),
                     count: 42
@@ -284,9 +283,9 @@ mod tests {
             ))
         );
         assert_eq!(
-            Backet::parser().parse(r#"Backet{"count":42,"asset_id":"usd",}"#.into()),
+            Backet::parser().parse(r#"Backet{"count":42,"asset_id":"usd",}"#),
             Ok((
-                "".into(),
+                "",
                 Backet {
                     asset_id: "usd".into(),
                     count: 42

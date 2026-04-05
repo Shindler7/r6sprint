@@ -494,86 +494,71 @@ mod test {
 
     #[test]
     fn test_quote() {
-        assert_eq!(quote(r#"411"#), r#""411""#.to_string());
-        assert_eq!(quote(r#"4\11""#), r#""4\\11\"""#.to_string());
+        assert_eq!(quote(r#"411"#), r#""411""#);
+        assert_eq!(quote(r#"4\11""#), r#""4\\11\"""#);
     }
 
     #[test]
     fn test_do_unquote_non_escaped() {
-        assert_eq!(
-            do_unquote_non_escaped(r#""411""#.into()),
-            Ok(("".into(), "411".into()))
-        );
-        assert_eq!(do_unquote_non_escaped(r#" "411""#.into()), Err(()));
-        assert_eq!(do_unquote_non_escaped(r#"411"#.into()), Err(()));
+        assert_eq!(do_unquote_non_escaped(r#""411""#), Ok(("", "411")));
+        assert_eq!(do_unquote_non_escaped(r#" "411""#), Err(()));
+        assert_eq!(do_unquote_non_escaped(r#"411"#), Err(()));
     }
 
     #[test]
     fn test_unquote() {
-        assert_eq!(
-            Unquote.parse(r#""411""#.into()),
-            Ok(("".into(), "411".into()))
-        );
-        assert_eq!(Unquote.parse(r#" "411""#.into()), Err(()));
-        assert_eq!(Unquote.parse(r#"411"#.into()), Err(()));
+        assert_eq!(Unquote.parse(r#""411""#), Ok(("", "411".into())));
+        assert_eq!(Unquote.parse(r#" "411""#), Err(()));
+        assert_eq!(Unquote.parse(r#"411"#), Err(()));
 
-        assert_eq!(
-            Unquote.parse(r#""ni\\c\"e""#.into()),
-            Ok(("".into(), r#"ni\c"e"#.into()))
-        );
+        assert_eq!(Unquote.parse(r#""ni\\c\"e""#), Ok(("", r#"ni\c"e"#.into())));
     }
 
     #[test]
     fn test_tag() {
-        assert_eq!(
-            tag("key=").parse("key=value".into()),
-            Ok(("value".into(), ()))
-        );
-        assert_eq!(tag("key=").parse("key:value".into()), Err(()));
+        assert_eq!(tag("key=").parse("key=value"), Ok(("value", ())));
+        assert_eq!(tag("key=").parse("key:value"), Err(()));
     }
 
     #[test]
     fn test_quoted_tag() {
         assert_eq!(
-            quoted_tag("key").parse(r#""key"=value"#.into()),
-            Ok(("=value".into(), ()))
+            quoted_tag("key").parse(r#""key"=value"#),
+            Ok(("=value", ()))
         );
-        assert_eq!(quoted_tag("key").parse(r#""key:"value"#.into()), Err(()));
-        assert_eq!(quoted_tag("key").parse(r#"key=value"#.into()), Err(()));
+        assert_eq!(quoted_tag("key").parse(r#""key:"value"#), Err(()));
+        assert_eq!(quoted_tag("key").parse(r#"key=value"#), Err(()));
     }
 
     #[test]
     fn test_strip_whitespace() {
         assert_eq!(
-            strip_whitespace(tag("hello")).parse(" hello world".into()),
-            Ok(("world".into(), ()))
+            strip_whitespace(tag("hello")).parse(" hello world"),
+            Ok(("world", ()))
         );
+        assert_eq!(strip_whitespace(tag("hello")).parse("hello"), Ok(("", ())));
         assert_eq!(
-            strip_whitespace(tag("hello")).parse("hello".into()),
-            Ok(("".into(), ()))
-        );
-        assert_eq!(
-            strip_whitespace(stdp::U32).parse(" 42 answer".into()),
-            Ok(("answer".into(), 42))
+            strip_whitespace(stdp::U32).parse(" 42 answer"),
+            Ok(("answer", 42))
         );
     }
 
     #[test]
     fn test_delimited() {
         assert_eq!(
-            delimited(tag("["), stdp::U32, tag("]")).parse("[0x32]".into()),
-            Ok(("".into(), 0x32))
+            delimited(tag("["), stdp::U32, tag("]")).parse("[0x32]"),
+            Ok(("", 0x32))
         );
         assert_eq!(
-            delimited(tag("["), stdp::U32, tag("]")).parse("[0x32] nice".into()),
-            Ok((" nice".into(), 0x32))
+            delimited(tag("["), stdp::U32, tag("]")).parse("[0x32] nice"),
+            Ok((" nice", 0x32))
         );
         assert_eq!(
-            delimited(tag("["), stdp::U32, tag("]")).parse("0x32]".into()),
+            delimited(tag("["), stdp::U32, tag("]")).parse("0x32]"),
             Err(())
         );
         assert_eq!(
-            delimited(tag("["), stdp::U32, tag("]")).parse("[0x32".into()),
+            delimited(tag("["), stdp::U32, tag("]")).parse("[0x32"),
             Err(())
         );
     }
@@ -581,34 +566,28 @@ mod test {
     #[test]
     fn test_key_value() {
         assert_eq!(
-            key_value("key", stdp::U32).parse(r#""key":32,"#.into()),
-            Ok(("".into(), 32))
+            key_value("key", stdp::U32).parse(r#""key":32,"#),
+            Ok(("", 32))
         );
+        assert_eq!(key_value("key", stdp::U32).parse(r#"key:32,"#), Err(()));
+        assert_eq!(key_value("key", stdp::U32).parse(r#""key":32"#), Err(()));
         assert_eq!(
-            key_value("key", stdp::U32).parse(r#"key:32,"#.into()),
-            Err(())
-        );
-        assert_eq!(
-            key_value("key", stdp::U32).parse(r#""key":32"#.into()),
-            Err(())
-        );
-        assert_eq!(
-            key_value("key", stdp::U32).parse(r#" "key" : 32 , nice"#.into()),
-            Ok(("nice".into(), 32))
+            key_value("key", stdp::U32).parse(r#" "key" : 32 , nice"#),
+            Ok(("nice", 32))
         );
     }
 
     #[test]
     fn test_list() {
         assert_eq!(
-            list(stdp::U32).parse("[1,2,3,4,]".into()),
-            Ok(("".into(), vec![1, 2, 3, 4,]))
+            list(stdp::U32).parse("[1,2,3,4,]"),
+            Ok(("", vec![1, 2, 3, 4,]))
         );
         assert_eq!(
-            list(stdp::U32).parse(" [ 1 , 2 , 3 , 4 , ] nice".into()),
-            Ok(("nice".into(), vec![1, 2, 3, 4,]))
+            list(stdp::U32).parse(" [ 1 , 2 , 3 , 4 , ] nice"),
+            Ok(("nice", vec![1, 2, 3, 4,]))
         );
-        assert_eq!(list(stdp::U32).parse("1,2,3,4,".into()), Err(()));
-        assert_eq!(list(stdp::U32).parse("[]".into()), Ok(("".into(), vec![])));
+        assert_eq!(list(stdp::U32).parse("1,2,3,4,"), Err(()));
+        assert_eq!(list(stdp::U32).parse("[]"), Ok(("", vec![])));
     }
 }

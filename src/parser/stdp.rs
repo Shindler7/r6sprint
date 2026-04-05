@@ -76,22 +76,22 @@ mod test {
 
     #[test]
     fn test_u32() {
-        assert_eq!(U32.parse("411".into()), Ok(("".into(), 411)));
-        assert_eq!(U32.parse("411ab".into()), Ok(("ab".into(), 411)));
-        assert_eq!(U32.parse("".into()), Err(()));
-        assert_eq!(U32.parse("-3".into()), Err(()));
-        assert_eq!(U32.parse("0x03".into()), Ok(("".into(), 0x3)));
-        assert_eq!(U32.parse("0x03abg".into()), Ok(("g".into(), 0x3ab)));
-        assert_eq!(U32.parse("0x".into()), Err(()));
+        assert_eq!(U32.parse("411"), Ok(("", 411)));
+        assert_eq!(U32.parse("411ab"), Ok(("ab", 411)));
+        assert_eq!(U32.parse(""), Err(()));
+        assert_eq!(U32.parse("-3"), Err(()));
+        assert_eq!(U32.parse("0x03"), Ok(("", 0x3)));
+        assert_eq!(U32.parse("0x03abg"), Ok(("g", 0x3ab)));
+        assert_eq!(U32.parse("0x"), Err(()));
     }
 
     #[test]
     fn test_i32() {
-        assert_eq!(I32.parse("411".into()), Ok(("".into(), 411)));
-        assert_eq!(I32.parse("411ab".into()), Ok(("ab".into(), 411)));
-        assert_eq!(I32.parse("".into()), Err(()));
-        assert_eq!(I32.parse("-3".into()), Ok(("".into(), -3)));
-        assert_eq!(I32.parse("0x03".into()), Err(()));
-        assert_eq!(I32.parse("-".into()), Err(()));
+        assert_eq!(I32.parse("411"), Ok(("", 411)));
+        assert_eq!(I32.parse("411ab"), Ok(("ab", 411)));
+        assert_eq!(I32.parse(""), Err(()));
+        assert_eq!(I32.parse("-3"), Ok(("", -3)));
+        assert_eq!(I32.parse("0x03"), Err(()));
+        assert_eq!(I32.parse("-"), Err(()));
     }
 }
